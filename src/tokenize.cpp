@@ -11,6 +11,7 @@
 #include "char_table.h"
 #include "prototypes.h"
 #include "chunk_list.h"
+#include "range.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -1566,7 +1567,26 @@ static bool parse_next(tok_ctx& ctx, chunk_t& pc)
    pc.flags     = 0;
 
    /* If it is turned off, we put everything except newlines into CT_UNKNOWN */
-   if (cpd.unc_off)
+   bool can_ignore = cpd.unc_off;
+   
+   if (!can_ignore && cpd.filter_ranges.size() > 0)
+   {
+      bool is_in = false;
+      for (auto &range : cpd.filter_ranges)
+      {
+         if (range_contains_line(range, pc.orig_line))
+         {
+            is_in = true;
+            break;
+         }
+      }
+      if (!is_in)
+      {
+         can_ignore = true;
+      }
+   }
+   
+   if (can_ignore)
    {
       if (parse_ignored(ctx, pc))
       {

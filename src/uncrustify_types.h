@@ -380,6 +380,12 @@ enum unc_stage
    US_CLEANUP
 };
 
+struct range_t
+{
+   unsigned offset;
+   unsigned length;
+};
+
 struct cp_data
 {
    deque<UINT8>       *bout;
@@ -389,6 +395,8 @@ struct cp_data
    enum unc_stage     unc_stage;
    int                check_fail_cnt; // total failures
    bool               if_changed;
+
+   vector<range_t>    filter_ranges;
 
    UINT32             error_count;
    const char         *filename;

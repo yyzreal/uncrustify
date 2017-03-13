@@ -163,65 +163,12 @@ add_custom_command(
 #
 # Uncrustify
 #
+file(GLOB uncrustify_SRC "src/*.cpp")
+file(GLOB uncrustify_INC "src/*.h")
+
 add_executable(uncrustify
-  src/align.cpp
-  src/align_stack.cpp
-  src/args.cpp
-  src/backup.cpp
-  src/braces.cpp
-  src/brace_cleanup.cpp
-  src/ChunkStack.cpp
-  src/chunk_list.cpp
-  src/combine.cpp
-  src/compat_posix.cpp
-  src/compat_win32.cpp
-  src/defines.cpp
-  src/detect.cpp
-  src/indent.cpp
-  src/keywords.cpp
-  src/lang_pawn.cpp
-  src/logger.cpp
-  src/logmask.cpp
-  src/md5.cpp
-  src/newlines.cpp
-  src/options.cpp
-  src/options_for_QT.cpp
-  src/output.cpp
-  src/parens.cpp
-  src/parse_frame.cpp
-  src/punctuators.cpp
-  src/semicolons.cpp
-  src/sorting.cpp
-  src/space.cpp
-  src/tokenize.cpp
-  src/tokenize_cleanup.cpp
-  src/uncrustify.cpp
-  src/unc_text.cpp
-  src/unc_tools.cpp
-  src/unicode.cpp
-  src/universalindentgui.cpp
-  src/width.cpp
-  src/align_stack.h
-  src/args.h
-  src/backup.h
-  src/base_types.h
-  src/char_table.h
-  src/ChunkStack.h
-  src/chunk_list.h
-  src/ListManager.h
-  src/logger.h
-  src/logmask.h
-  src/log_levels.h
-  src/md5.h
-  src/options.h
-  src/options_for_QT.h
-  src/prototypes.h
-  src/punctuators.h
-  src/token_enum.h
-  src/uncrustify_types.h
-  src/unc_ctype.h
-  src/unc_text.h
-  src/unc_tools.h
+  ${uncrustify_SRC}
+  ${uncrustify_INC}
 )
 
 if(CMAKE_VERSION VERSION_LESS 2.8.10)

@@ -19,6 +19,8 @@
 #include "log_levels.h"
 #include "md5.h"
 #include "backup.h"
+#include "range.h"
+
 //#include "unc_tools.h"
 
 #include <cstdio>
@@ -161,6 +163,7 @@ static void usage_exit(const char *msg, const char *argv0, int code)
            " -t           : Load a file with types (usually not needed).\n"
            " -q           : Quiet mode - no output on stderr (-L will override).\n"
            " --frag       : Code fragment, assume the first line is indented correctly.\n"
+           " -# RANGE     : Limit the format output only to the specified line range.\n"
            " --assume FN  : Uses the filename FN for automatic language detection if reading\n"
            "                from stdin unless -l is specified.\n"
            "\n"
@@ -344,6 +347,15 @@ int main(int argc, char *argv[])
       log_set_mask(mask);
    }
    cpd.frag = arg.Present("--frag");
+
+   if (((p_arg = arg.Param("-#")) != NULL))
+   {
+      if (!parse_range(p_arg, cpd.filter_ranges))
+      {
+         fprintf(stderr, "Failed to parse filter ranges argument");
+         return(EXIT_FAILURE);
+      }
+   }
 
    if (arg.Present("--decode"))
    {
