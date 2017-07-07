@@ -5,13 +5,13 @@ import errno
 import threading
 
 from os import makedirs, path, name as os_name, linesep as os_linesep, \
-               sep as os_sep
+               sep as os_sep, fdopen
 from subprocess import Popen, PIPE
 from sys import exit as sys_exit, stderr, stdout
 from shutil import rmtree
 from multiprocessing import cpu_count
 from math import floor
-from tempfile import mkdtemp
+from tempfile import mkdtemp, mkstemp
 from contextlib import contextmanager
 from collections import OrderedDict
 from threading import Timer
@@ -75,11 +75,17 @@ def term_proc(proc, timeout):
     proc.terminate()
 
 
-def uncrustify(unc_bin_path, cfg_path, unformatted_file_path, lang=None):
+def uncrustify(unc_bin_path, cfg_path, unformatted_file_path, lang=None, debug_file=None, check=False):
     args = [unc_bin_path, "-c", cfg_path, '-f', unformatted_file_path, "-q"]
     if lang is not None:
         args.append("-l")
         args.append(lang)
+    if debug_file is not None:
+        args.append('-p')
+        args.append(debug_file)
+    if check:
+        args.append('--check')
+
     proc = Popen(args, stdout=PIPE, stderr=PIPE)
 
     timeout = {"value": False}
@@ -100,6 +106,24 @@ def uncrustify(unc_bin_path, cfg_path, unformatted_file_path, lang=None):
               file=stderr)
 
     return output_b
+
+
+def get_non_default_options(unc_bin_path, cfg_path, gen_cfg_path):
+    fd, unc_fn = mkstemp(suffix='.unc')
+
+    uncrustify(unc_bin_path, cfg_path, NULL_DEV, debug_file=unc_fn, check=True)
+
+    fp = os.fdopen(fd, 'r')
+    lines = fp.read().splitlines()
+    lines = [line for line in lines if not line[:1] == '#']
+
+    options_str = ""
+    with open(gen_cfg_path, 'w') as out:
+        options_str = '\n'.join(lines)
+
+    fp.close()
+    os.unlink(unc_fn)
+    return options_str
 
 
 def process_uncrustify(unc_bin_path, input_path, formatted_path,
@@ -227,8 +251,7 @@ def make_temp_directory():
     try:
         yield temp_dir
     finally:
-        pass
-        # rmtree(temp_dir)
+        rmtree(temp_dir)
 
 
 def main():
