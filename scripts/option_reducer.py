@@ -3,6 +3,7 @@ from __future__ import print_function  # python >= 2.6
 import argparse
 import errno
 import threading
+import re
 
 from os import makedirs, path, name as os_name, linesep as os_linesep, \
                sep as os_sep, fdopen
@@ -29,8 +30,8 @@ RestultsFlag = enum(NONE=0, REMOVE=1, KEEP=2)
 def thread_wrapper(func, args, res):
     res.append(func(*args))
 
-
-def read_config_file(file_path):
+def parse_config_file(file_data):
+    """"parse config file data into config list"""
     # dict used to only save the last option setting if the same option occurs
     # multiple times, without this:
     #   optionA0 can be removed because optionA1 = s0, and
@@ -44,30 +45,37 @@ def read_config_file(file_path):
                     'file_ext', 'define'}
     special_list = []
 
-    with open(file_path, 'r') as f:
-        for line in f:
-            pound_pos = line.find('#')
-            if pound_pos != -1:
-                line = line[:pound_pos]
+    # filter out comments
+    lines = [line for line in file_data.splitlines() if not re.match(r'\s*#', line)]
 
-            split_pos = line.find('=')
-            if split_pos == -1:
-                split_pos = line.find(' ')
-            if split_pos == -1:
-                continue
+    for line in lines:
+        pound_pos = line.find('#')
+        if pound_pos != -1:
+            line = line[:pound_pos]
 
-            key = line[:split_pos].strip()
-            value = line[split_pos+1:].strip()
+        split_pos = line.find('=')
+        if split_pos == -1:
+            split_pos = line.find(' ')
+        if split_pos == -1:
+            continue
 
-            if key in special_keys:
-                special_list.append((key, value))
-            else:
-                config_map[key] = value
+        key = line[:split_pos].strip()
+        value = line[split_pos+1:].strip()
+
+        if key in special_keys:
+            special_list.append((key, value))
+        else:
+            config_map[key] = value
 
     config_list = list(config_map.items())
     config_list += special_list
 
     return config_list
+
+
+def read_config_file(file_path):
+    with open(file_path, 'r') as f:
+        return parse_config_file(f.read())
 
 
 def term_proc(proc, timeout):
@@ -108,21 +116,20 @@ def uncrustify(unc_bin_path, cfg_path, unformatted_file_path, lang=None, debug_f
     return output_b
 
 
-def get_non_default_options(unc_bin_path, cfg_path, gen_cfg_path):
-    fd, unc_fn = mkstemp(suffix='.unc')
+def get_cfg_dump(unc_bin_path, cfg_path, tmp_dir):
+    """Uses Uncrustify's debug dump to get the non-default option overrides with
+    the include statements resolved.
+    """
+    fd, unc_fn = mkstemp(dir=tmp_dir, suffix='.unc')
 
     uncrustify(unc_bin_path, cfg_path, NULL_DEV, debug_file=unc_fn, check=True)
 
-    fp = os.fdopen(fd, 'r')
-    lines = fp.read().splitlines()
-    lines = [line for line in lines if not line[:1] == '#']
+    with fdopen(fd, 'r') as fp:
+        options_str = fp.read()
 
-    options_str = ""
-    with open(gen_cfg_path, 'w') as out:
-        options_str = '\n'.join(lines)
+    # We are responsible to delete the file, but it will be done when the temp
+    # directory will be removed
 
-    fp.close()
-    os.unlink(unc_fn)
     return options_str
 
 
@@ -208,7 +215,7 @@ def sanity_run(uncrustify_binary_path, tmp_dir, config_list, remove_flags,
         expected_string = f.read()
 
     with open(gen_cfg_path, 'w') as f:
-        pint_config(config_list, remove_flags, target_file=f)
+        print_config(config_list, remove_flags, target_file=f)
 
     formatted_string = uncrustify(uncrustify_binary_path, gen_cfg_path,
                                   input_file_path, lang)
@@ -221,7 +228,7 @@ def sanity_run(uncrustify_binary_path, tmp_dir, config_list, remove_flags,
     return ret_flag
 
 
-def pint_config(config_list, remove_flags, flag=RestultsFlag.KEEP,
+def print_config(config_list, remove_flags, flag=RestultsFlag.KEEP,
                 target_file=stdout):
     config_list_len = len(config_list)
     loop_flag = False
@@ -256,14 +263,19 @@ def make_temp_directory():
 
 def main():
     ret_flag = 0
-    config_list = read_config_file(FLAGS.config_file_path)
-    config_list_len = len(config_list)
-    file_len = len(FLAGS.input_file_path)
-
-    num_splits = FLAGS.jobs
-    lang_max_idx = -1 if FLAGS.lang is None else len(FLAGS.lang) - 1
 
     with make_temp_directory() as tmp_dir:
+        config_list = parse_config_file(
+            get_cfg_dump(FLAGS.uncrustify_binary_path,
+                         FLAGS.config_file_path,
+                         tmp_dir)) if FLAGS.resolve else \
+            read_config_file(FLAGS.config_file_path)
+        config_list_len = len(config_list)
+        file_len = len(FLAGS.input_file_path)
+
+        num_splits = FLAGS.jobs
+        lang_max_idx = -1 if FLAGS.lang is None else len(FLAGS.lang) - 1
+
         # sanity run -----------------------------------------------------------
         for idx in range(file_len):
             lang = None if idx > lang_max_idx else FLAGS.lang[idx]
@@ -338,7 +350,7 @@ def main():
             if not FLAGS.quiet:
                 print("\n%s" % '# '.ljust(78, '-'))
 
-            pint_config(config_list, remove_flags)
+            print_config(config_list, remove_flags)
 
             if not FLAGS.quiet:
                 print("\n%s" % '# '.ljust(78, '-'))
@@ -368,7 +380,7 @@ def main():
 
             if ret_flag == errno.EMFILE:
                 print("\nRemoved options:", file=stderr)
-                pint_config(config_list, remove_flags, flag=RestultsFlag.REMOVE,
+                print_config(config_list, remove_flags, flag=RestultsFlag.REMOVE,
                             target_file=stderr)
                 print("\n\n", file=stderr)
 
@@ -448,6 +460,12 @@ if __name__ == "__main__":
         required=True,
         action='append',
         help='Path to the formatted source file.'
+    )
+    arg_parser.add_argument(
+        '-r', '--resolve',
+        default=False,
+        action="store_true",
+        help="Resolve the config options with non-default values with debug dump"
     )
     FLAGS, unparsed = arg_parser.parse_known_args()
 
