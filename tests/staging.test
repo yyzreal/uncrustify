@@ -8,11 +8,9 @@
 10017 empty.cfg staging/PR326_invalid-backslash-eol-csharp.cs
 10026 staging/Uncrustify.Cpp.cfg staging/ifoneliner.cpp
 10038 staging/614_multiple-passes.cfg staging/614_multiple-passes.cs
-10039 empty.cfg staging/615_nested-usings.cs
 10042 staging/Uncrustify.Cpp.cfg staging/indent-bad.mm
 10043 staging/Uncrustify.CSharp.cfg staging/nl-brace.cs
 10049 staging/Uncrustify.Cpp.cfg    staging/UNI-1336.cpp
-10051 staging/Uncrustify.CSharp.cfg staging/UNI-1338.cs
 10053 staging/Uncrustify.Cpp.cfg    staging/UNI-1340.cpp
 10054 staging/Uncrustify.Cpp.cfg    staging/UNI-1344.cpp
 10056 staging/UNI-1346.cfg          staging/UNI-1346.cpp
@@ -53,3 +51,6 @@
 60024 staging/Uncrustify.CSharp.cfg staging/UNI-19644.cs
 60025 staging/Uncrustify.Cpp.cfg staging/UNI-19894.cpp
 60026 staging/Uncrustify.CSharp.cfg staging/UNI-19895.cs
+60027 staging/Uncrustify.Cpp.cfg staging/UNI-21506.cpp
+60028 staging/Uncrustify.Cpp.cfg staging/UNI-21509.cpp
+60029 staging/Uncrustify.Cpp.cfg staging/UNI-21510.cpp
