@@ -235,7 +235,7 @@ static bool match_text(const char *str1, const char *str2)
 {
    int matches = 0;
 
-   while ((*str1 != 0) && (*str2 != 0))
+   while (*str1 != 0 && *str2 != 0)
    {
       if (!unc_isalnum(*str1))
       {
@@ -1074,8 +1074,12 @@ void register_options(void)
                   "Add or remove newline between return type and function name in a prototype");
    unc_add_option("nl_func_paren", UO_nl_func_paren, AT_IARF,
                   "Add or remove newline between a function name and the opening '(' in the declaration");
+   unc_add_option("nl_func_paren_empty", UO_nl_func_paren_empty, AT_IARF,
+                  "Overrides nl_func_paren for functions with no parameters");
    unc_add_option("nl_func_def_paren", UO_nl_func_def_paren, AT_IARF,
                   "Add or remove newline between a function name and the opening '(' in the definition");
+   unc_add_option("nl_func_def_paren_empty", UO_nl_func_def_paren_empty, AT_IARF,
+                  "Overrides nl_func_def_paren for functions with no parameters");
    unc_add_option("nl_func_decl_start", UO_nl_func_decl_start, AT_IARF,
                   "Add or remove newline after '(' in a function declaration");
    unc_add_option("nl_func_def_start", UO_nl_func_def_start, AT_IARF,
@@ -1219,13 +1223,13 @@ void register_options(void)
                   "'while (i<5)\\n foo(i++);' => 'while (i<5) foo(i++);'");
    unc_add_option("nl_split_if_one_liner", UO_nl_split_if_one_liner, AT_BOOL,
                   " Change a one-liner if statement into simple unbraced if\n"
-                  "'if(b) i++;' => 'if(b) i++;'");
+                  "'if(b) i++;' => 'if(b)\\n i++;'");
    unc_add_option("nl_split_for_one_liner", UO_nl_split_for_one_liner, AT_BOOL,
                   "Change a one-liner for statement into simple unbraced for\n"
-                  "'for (i=0;<5;i++) foo(i);' => 'for (i=0;<5;i++) foo(i);'");
+                  "'for (i=0;<5;i++) foo(i);' => 'for (i=0;<5;i++)\\n foo(i);'");
    unc_add_option("nl_split_while_one_liner", UO_nl_split_while_one_liner, AT_BOOL,
-                  "Change simple unbraced while statements into a one-liner while\n"
-                  "'while (i<5)\\n foo(i++);' => 'while (i<5) foo(i++);'");
+                  "Change a one-liner while statement into simple unbraced while\n"
+                  "'while (i<5) foo(i++);' => 'while (i<5)\\n foo(i++);'");
 
    unc_begin_group(UG_blankline, "Blank line options", "Note that it takes 2 newlines to get a blank line");
    unc_add_option("nl_max", UO_nl_max, AT_UNUM,
@@ -1805,21 +1809,27 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
    }
 
    const option_map_value *tmp;
-   if ((entry->type == AT_NUM) || (entry->type == AT_UNUM))
+   if (entry->type == AT_NUM || entry->type == AT_UNUM)
    {
       if (  unc_isdigit(*val)
          || (  unc_isdigit(val[1])
             && ((*val == '-') || (*val == '+'))))
       {
-         if ((entry->type == AT_UNUM) && (*val == '-'))
+         if (entry->type == AT_UNUM && (*val == '-'))
          {
             fprintf(stderr, "%s:%d\n  for the option '%s' is a negative value not possible: %s",
                     cpd.filename, cpd.line_number, entry->name, val);
             log_flush(true);
             exit(EX_CONFIG);
          }
-         dest->n = strtol(val, nullptr, 0);
-         // is the same as dest->u
+         if (entry->type == AT_NUM)
+         {
+            dest->n = strtol(val, nullptr, 0);
+         }
+         else
+         {
+            dest->u = strtoul(val, nullptr, 0);
+         }
          return;
       }
 
@@ -1834,7 +1844,7 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
       tmp = unc_find_option(val);
       if (tmp == nullptr)
       {
-         fprintf(stderr, "%s:%d\n  for the assigment: unknown option '%s':",
+         fprintf(stderr, "%s:%d\n  for the assignment: unknown option '%s':",
                  cpd.filename, cpd.line_number, val);
          log_flush(true);
          exit(EX_CONFIG);
@@ -1845,18 +1855,35 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
               cpd.line_number, get_argtype_name(entry->type),
               entry->name, get_argtype_name(tmp->type), tmp->name);
 
-      if (  (tmp->type == entry->type)
-         || ((tmp->type == AT_UNUM) && (entry->type == AT_NUM))
-         || (  (tmp->type == AT_NUM)
-            && (entry->type == AT_UNUM)
-            && (cpd.settings[tmp->id].n * mult) > 0))
+      if (tmp->type == AT_UNUM || tmp->type == AT_NUM)
       {
-         dest->n = cpd.settings[tmp->id].n * mult;
-         // is the same as dest->u
-         return;
+         long tmp_val;
+         if (tmp->type == AT_UNUM)
+         {
+            tmp_val = cpd.settings[tmp->id].u * mult;
+         }
+         else
+         {
+            tmp_val = cpd.settings[tmp->id].n * mult;
+         }
+
+         if (entry->type == AT_NUM)
+         {
+            dest->n = tmp_val;
+            return;
+         }
+         if (tmp_val >= 0) //dest->type == AT_UNUM
+         {
+            dest->u = tmp_val;
+            return;
+         }
+         fprintf(stderr, "%s:%d\n  for the assignment: option '%s' could not have negative value %ld",
+                 cpd.filename, cpd.line_number, entry->name, tmp_val);
+         log_flush(true);
+         exit(EX_CONFIG);
       }
 
-      fprintf(stderr, "%s:%d\n  for the assigment: expected type for %s is %s, got %s\n",
+      fprintf(stderr, "%s:%d\n  for the assignment: expected type for %s is %s, got %s\n",
               cpd.filename, cpd.line_number,
               entry->name, get_argtype_name(entry->type), get_argtype_name(tmp->type));
       log_flush(true);
@@ -1889,7 +1916,7 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
       }
 
       if (  ((tmp = unc_find_option(val)) != nullptr)
-         && (tmp->type == entry->type))
+         && tmp->type == entry->type)
       {
          dest->b = cpd.settings[tmp->id].b ? btrue : !btrue;
          return;
@@ -1931,7 +1958,7 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
       return;
    }
    if (  ((tmp = unc_find_option(val)) != nullptr)
-      && (tmp->type == entry->type))
+      && tmp->type == entry->type)
    {
       dest->a = cpd.settings[tmp->id].a;
       return;
@@ -1964,8 +1991,7 @@ bool is_path_relative(const char *path)
     * Check for partition labels as indication for an absolute path
     * X:\path\to\file style absolute disk path
     */
-   if (  isalpha(path[0])
-      && (path[1] == ':'))
+   if (isalpha(path[0]) && path[1] == ':')
    {
       return(false);
    }
@@ -1974,8 +2000,7 @@ bool is_path_relative(const char *path)
     * Check for double backslashs as indication for a network path
     * \\server\path\to\file style absolute UNC path
     */
-   if (  (path[0] == '\\')
-      && (path[1] == '\\'))
+   if (path[0] == '\\' && path[1] == '\\')
    {
       return(false);
    }
@@ -2206,7 +2231,7 @@ int save_option_file_kernel(FILE *pfile, bool withDoc, bool only_not_default)
          // ...................................................................
 
          if (  withDoc
-            && (option->short_desc != nullptr)
+            && option->short_desc != nullptr
             && (*option->short_desc != 0))
          {
             if (first)
@@ -2347,12 +2372,12 @@ void set_option_defaults(void)
    cpd.defaults[UO_cmt_indent_multi].b                                  = true;
    cpd.defaults[UO_cmt_insert_before_inlines].b                         = true;
    cpd.defaults[UO_cmt_multi_check_last].b                              = true;
-   cpd.defaults[UO_cmt_multi_first_len_minimum].n                       = 4;
+   cpd.defaults[UO_cmt_multi_first_len_minimum].u                       = 4;
    cpd.defaults[UO_indent_access_spec].n                                = 1;
    cpd.defaults[UO_indent_align_assign].b                               = true;
    cpd.defaults[UO_indent_columns].u                                    = 8;
    cpd.defaults[UO_indent_cpp_lambda_body].b                            = false;
-   cpd.defaults[UO_indent_ctor_init_leading].n                          = 2;
+   cpd.defaults[UO_indent_ctor_init_leading].u                          = 2;
    cpd.defaults[UO_indent_label].n                                      = 1;
    cpd.defaults[UO_indent_oc_msg_prioritize_first_colon].b              = true;
    cpd.defaults[UO_indent_token_after_brace].b                          = true;
@@ -2362,7 +2387,7 @@ void set_option_defaults(void)
    cpd.defaults[UO_input_tab_size].u                                    = 8;
    cpd.defaults[UO_newlines].le                                         = LE_AUTO;
    cpd.defaults[UO_output_tab_size].u                                   = 8;
-   cpd.defaults[UO_pp_indent_count].n                                   = 1;
+   cpd.defaults[UO_pp_indent_count].u                                   = 1;
    cpd.defaults[UO_sp_addr].a                                           = AV_REMOVE;
    cpd.defaults[UO_sp_after_semi].a                                     = AV_ADD;
    cpd.defaults[UO_sp_after_semi_for].a                                 = AV_FORCE;
@@ -2384,10 +2409,10 @@ void set_option_defaults(void)
    cpd.defaults[UO_sp_this_paren].a                                     = AV_REMOVE;
    cpd.defaults[UO_sp_word_brace].a                                     = AV_ADD;
    cpd.defaults[UO_sp_word_brace_ns].a                                  = AV_ADD;
-   cpd.defaults[UO_string_escape_char].n                                = '\\';
+   cpd.defaults[UO_string_escape_char].u                                = '\\';
    cpd.defaults[UO_use_indent_func_call_param].b                        = true;
    cpd.defaults[UO_use_options_overriding_for_qt_macros].b              = true;
-   cpd.defaults[UO_warn_level_tabs_found_in_verbatim_string_literals].n = LWARN;
+   cpd.defaults[UO_warn_level_tabs_found_in_verbatim_string_literals].u = LWARN;
    cpd.defaults[UO_pp_indent_case].b                                    = true;
    cpd.defaults[UO_pp_indent_func_def].b                                = true;
    cpd.defaults[UO_pp_indent_extern].b                                  = true;
@@ -2411,8 +2436,7 @@ void set_option_defaults(void)
             log_flush(true);
             exit(EX_SOFTWARE);
          }
-         if (  (min_value > 0)
-            && (default_value < min_value))
+         if (min_value > 0 && default_value < min_value)
          {
             fprintf(stderr, "option '%s' is not correctly set:\n", id.second.name);
             fprintf(stderr, "The default value '%zu' is less than the min value '%zu'.\n",
@@ -2426,7 +2450,7 @@ void set_option_defaults(void)
       {
          int min_value     = value.min_val;
          int max_value     = value.max_val;
-         int default_value = cpd.defaults[id.first].u;
+         int default_value = cpd.defaults[id.first].n;
          if (default_value > max_value)
          {
             fprintf(stderr, "option '%s' is not correctly set:\n", id.second.name);
