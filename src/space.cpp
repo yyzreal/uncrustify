@@ -214,11 +214,13 @@ static argval_t do_space(chunk_t *first, chunk_t *second, int &min_sp, bool comp
 
    if (first->type == CT_FOR_COLON)
    {
+      // java
       log_rule("sp_after_for_colon");
       return(cpd.settings[UO_sp_after_for_colon].a);
    }
    if (second->type == CT_FOR_COLON)
    {
+      // java
       log_rule("sp_before_for_colon");
       return(cpd.settings[UO_sp_before_for_colon].a);
    }
@@ -392,7 +394,8 @@ static argval_t do_space(chunk_t *first, chunk_t *second, int &min_sp, bool comp
             log_rule("sp_after_semi_for_empty");
             return(cpd.settings[UO_sp_after_semi_for_empty].a);
          }
-         if (cpd.settings[UO_sp_after_semi_for].a != AV_IGNORE)
+         if (  (cpd.settings[UO_sp_after_semi_for].a != AV_IGNORE)
+            && second->type != CT_SPAREN_CLOSE)  // Issue 1324
          {
             log_rule("sp_after_semi_for");
             return(cpd.settings[UO_sp_after_semi_for].a);
@@ -1060,12 +1063,12 @@ static argval_t do_space(chunk_t *first, chunk_t *second, int &min_sp, bool comp
       {
          if (cpd.settings[UO_sp_before_type_brace_init_lst_close].a != AV_IGNORE)
          {
-            log_rule("sp_before_init_braces_close");
+            log_rule("sp_before_type_brace_init_lst_close");
             return(cpd.settings[UO_sp_before_type_brace_init_lst_close].a);
          }
          if (cpd.settings[UO_sp_inside_type_brace_init_lst].a != AV_IGNORE)
          {
-            log_rule("sp_inside_init_braces");
+            log_rule("sp_inside_type_brace_init_lst");
             return(cpd.settings[UO_sp_inside_type_brace_init_lst].a);
          }
       }
@@ -1633,25 +1636,24 @@ static argval_t do_space(chunk_t *first, chunk_t *second, int &min_sp, bool comp
          log_rule("sp_inside_braces_enum");
          return(cpd.settings[UO_sp_inside_braces_enum].a);
       }
-
-      if (first->parent_type == CT_UNION || first->parent_type == CT_STRUCT)
+      if (first->parent_type == CT_STRUCT || first->parent_type == CT_UNION)
       {
          log_rule("sp_inside_braces_struct");
          return(cpd.settings[UO_sp_inside_braces_struct].a);
       }
-
       if (first->parent_type == CT_TYPE)
       {
          if (cpd.settings[UO_sp_after_type_brace_init_lst_open].a != AV_IGNORE)
          {
-            log_rule("sp_after_init_braces_open");
+            log_rule("sp_after_type_brace_init_lst_open");
             return(cpd.settings[UO_sp_after_type_brace_init_lst_open].a);
          }
-
-         log_rule("sp_inside_braces_struct");
-         return(cpd.settings[UO_sp_inside_type_brace_init_lst].a);
+         if (cpd.settings[UO_sp_inside_type_brace_init_lst].a != AV_IGNORE)
+         {
+            log_rule("sp_inside_type_brace_init_lst");
+            return(cpd.settings[UO_sp_inside_type_brace_init_lst].a);
+         }
       }
-
       if (!chunk_is_comment(second))
       {
          log_rule("sp_inside_braces");
@@ -2239,7 +2241,7 @@ size_t space_col_align(chunk_t *first, chunk_t *second)
 {
    LOG_FUNC_ENTRY();
 
-   LOG_FMT(LSPACE, "%s(%d): orig_line is %zu, orig_col is %zu, [%s/%s] '%s' <==> line is %zu, col is %zu [%s/%s] '%s'",
+   LOG_FMT(LSPACE, "%s(%d): orig_line is %zu, orig_col is %zu, [%s/%s] '%s' <==> orig_line is %zu, orig_col is %zu [%s/%s] '%s'",
            __func__, __LINE__, first->orig_line, first->orig_col,
            get_token_name(first->type), get_token_name(first->parent_type),
            first->text(),
@@ -2252,15 +2254,24 @@ size_t space_col_align(chunk_t *first, chunk_t *second)
    argval_t av = do_space(first, second, min_sp);
 
    LOG_FMT(LSPACE, "%s(%d): av is %d, ", __func__, __LINE__, av);
+#ifdef DEBUG
+   LOG_FMT(LSPACE, "\n");
+#endif
    size_t coldiff;
    if (first->nl_count)
    {
       LOG_FMT(LSPACE, "nl_count is %zu, orig_col_end is %zu", first->nl_count, first->orig_col_end);
+#ifdef DEBUG
+      LOG_FMT(LSPACE, "\n");
+#endif
       coldiff = first->orig_col_end - 1;
    }
    else
    {
       LOG_FMT(LSPACE, "len is %zu", first->len());
+#ifdef DEBUG
+      LOG_FMT(LSPACE, "\n");
+#endif
       coldiff = first->len();
    }
 
