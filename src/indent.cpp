@@ -1966,9 +1966,6 @@ void indent_text(void)
             else if (  chunk_is_newline(next)
                     || !cpd.settings[UO_indent_align_assign].b)
             {
-               frm.pse[frm.pse_tos].indent = frm.pse[frm.pse_tos - 1].indent_tmp + indent_size;
-               log_indent();
-
                // fixes  1260 , 1268 , 1277 (Extra indentation after line with multiple assignments)
                // setting CT_ASSIGN_NL only for pc type is CT_ASSIGN & chunk next is new line
                // Also reverting indent for assignment with out newline
@@ -1986,6 +1983,11 @@ void indent_text(void)
                   frm.pse[frm.pse_tos].type       = CT_ASSIGN_NL;
                   frm.pse[frm.pse_tos].indent     = frm.pse[reindent_position].indent_tmp + indent_size;
                   frm.pse[frm.pse_tos].indent_tab = frm.pse[frm.pse_tos].indent;
+               }
+               else
+               {
+                  frm.pse[frm.pse_tos].indent = frm.pse[frm.pse_tos - 1].indent_tmp + indent_size;
+                  log_indent();
                }
             }
             else
