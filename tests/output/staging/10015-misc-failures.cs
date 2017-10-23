@@ -6,9 +6,9 @@ line");
 }
 
 x = o.Func(
-        y);
+    y);
 x = o.Func2(a, b,
-        y);
+    y);
 o.Func(
     y);
 o.Func2(a, b,
