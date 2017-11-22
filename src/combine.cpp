@@ -4280,17 +4280,6 @@ static void mark_function(chunk_t *pc)
 #ifdef DEBUG
             LOG_FMT(LFCN, "\n");
 #endif
-            // Issue #1112
-            prev = chunk_get_prev_ncnlnpnd(prev);
-            if (prev == nullptr)
-            {
-               LOG_FMT(LFCN, "nullptr\n");
-            }
-            else
-            {
-               LOG_FMT(LFCN, "orig_line is %zu, orig_col is %zu, text() '%s'\n",
-                       prev->orig_line, prev->orig_col, prev->text());
-            }
             continue;
          }
 
