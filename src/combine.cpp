@@ -4263,7 +4263,7 @@ static void mark_function(chunk_t *pc)
 
             // fixes issues 1005, 1288 and 1249
             // should not remove space between '::' and keyword, since it is a return type.
-            if (prev != nullptr && chunk_is_keyword(prev) && tmp->type == CT_DC_MEMBER)
+            if (chunk_is_keyword(prev) && tmp->type == CT_DC_MEMBER)
             {
                isa_def = true;
                set_chunk_parent(tmp, CT_FUNC_START);
@@ -4279,11 +4279,8 @@ static void mark_function(chunk_t *pc)
 #endif
                LOG_FMT(LFCN, " --? Skipped MEMBER and landed on %s\n",
                        (prev == NULL) ? "<null>" : get_token_name(prev->type));
-               if (tmp->type != CT_DC_MEMBER)
-               {
-                  set_chunk_type(pc, CT_FUNC_CALL);
-                  isa_def = false;
-               }
+               set_chunk_type(pc, CT_FUNC_CALL);
+               isa_def = false;
                break;
             }
             LOG_FMT(LFCN, " <skip %s>", prev->text());
