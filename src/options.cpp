@@ -2304,9 +2304,10 @@ int load_option_file(const char *filename)
    return(0);
 } // load_option_file
 
+
 const char *get_eol_marker()
 {
-   static char eol[3] = { 0x0A, 0x00, 0x00 };
+   static char                 eol[3] = { 0x0A, 0x00, 0x00 };
 
    const unc_text::value_type &lines = cpd.newline.get();
 
@@ -2315,13 +2316,14 @@ const char *get_eol_marker()
       eol[i] = (char)lines[i];
    }
 
-   return eol;
+   return(eol);
 }
+
 
 int save_option_file_kernel(FILE *pfile, bool withDoc, bool only_not_default)
 {
-   int count_the_not_default_options = 0;
-   
+   int        count_the_not_default_options = 0;
+
    const char *eol_marker = get_eol_marker();
 
    fprintf(pfile, "# %s%s", UNCRUSTIFY_VERSION, eol_marker);
@@ -2373,7 +2375,7 @@ int save_option_file_kernel(FILE *pfile, bool withDoc, bool only_not_default)
 
             if (option->short_desc[idx - 1] != '\n')
             {
-                fputs(eol_marker, pfile);
+               fputs(eol_marker, pfile);
             }
          }
          first = false;
