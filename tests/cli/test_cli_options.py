@@ -85,8 +85,8 @@ def write_to_output_path(output_path, result_str):
     #For the sake of consistency, all newlines are now being written out as \n
     #However, if the result_str itself contains \r\n, then \r\n will be output
     #as this code doesn't post process the data being written out
-    with open(output_path, 'wb', encoding="utf-8", newline="\n") as f:
-        f.write(result_str)
+    with open(output_path, 'w', encoding="utf-8", newline="\n") as f:
+        f.write(unicode(result_str))
 
 def get_file_content(fp):
     """
@@ -165,8 +165,8 @@ def check_generated_output(gen_expected_path, gen_result_path, result_manip=None
 
     if gen_res_txt != gen_exp_txt:
 
-        with open(gen_result_path, 'wb', encoding="utf-8", newline="") as f:
-                f.write(gen_res_txt)
+        with open(gen_result_path, 'w', encoding="utf-8", newline="") as f:
+                f.write(unicode(gen_res_txt))
     
         if program_args.apply and program_args.auto_output_path:
                 write_to_output_path(program_args.auto_output_path, gen_res_txt)
@@ -234,8 +234,8 @@ def check_std_output(expected_path, result_path, result_str, result_manip=None, 
             result_str = result_manip(result_str)
 
     if result_str != exp_txt:
-        with open(result_path, 'wb', encoding="utf-8", newline="\n") as f:
-            f.write(result_str)
+        with open(result_path, 'w', encoding="utf-8", newline="\n") as f:
+            f.write(unicode(result_str))
        
         if program_args.apply and program_args.auto_output_path:
             write_to_output_path(program_args.auto_output_path, result_str)
