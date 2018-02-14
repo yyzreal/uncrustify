@@ -508,6 +508,8 @@ def main(args):
 
     parsed_args = parser.parse_args()
 
+    parsed_args.diff = True
+
     # find the uncrustify binary (keep Debug dir excluded)
     bin_found = False
     uncr_bin = ''
