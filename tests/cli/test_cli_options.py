@@ -234,6 +234,13 @@ def check_std_output(expected_path, result_path, result_str, result_manip=None, 
         else:
             result_str = result_manip(result_str)
 
+    if program_args.input_file is not "":
+        with open(program_args.input_file, encoding="utf-8", newline="\n") as f:
+           inputFile = f.read()
+
+        print("Input file is:\n")
+        pprint.PrettyPrinter(indent=4).pprint(inputFile)
+
     if result_str != exp_txt:
         with open(result_path, 'w', encoding="utf-8", newline="\n") as f:
             f.write(unicode(result_str))
@@ -254,17 +261,7 @@ def check_std_output(expected_path, result_path, result_str, result_manip=None, 
         else:
             print("\nProblem with %s" % result_path)
             print("use: '--diff' to find out why %s %s are different" % (result_path, expected_path))
-            
-
         return False
-
-
-    if program_args.input_file is not "":
-        with open(program_args.input_file, encoding="utf-8", newline="\n") as f:
-           inputFile = f.read()
-
-        print("Input file is:\n")
-        pprint.PrettyPrinter(indent=4).pprint(inputFile)
 
     return True
 
