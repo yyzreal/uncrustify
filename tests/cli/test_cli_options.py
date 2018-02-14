@@ -177,7 +177,7 @@ def check_generated_output(gen_expected_path, gen_result_path, result_manip=None
             print("Problem with %s" % gen_result_path)
             print("************************************")
 
-            fileDiff = difflib.ndiff(gen_res_txt.splitlines(keepends=True), gen_exp_txt.splitlines(keepends=True))
+            fileDiff = difflib.ndiff(gen_res_txt.splitlines(True), gen_exp_txt.splitlines(True))
 
             for line in fileDiff:
                 pprint.PrettyPrinter(indent=4).pprint(line);
@@ -247,10 +247,10 @@ def check_std_output(expected_path, result_path, result_str, result_manip=None, 
             print("Problem with %s" % result_path)
             print("************************************")
 
-            fileDiff = difflib.ndiff(result_str.splitlines(keepends=True), exp_txt.splitlines(keepends=True))
+            fileDiff = difflib.ndiff(result_str.splitlines(True), exp_txt.splitlines(True))
 
             for line in fileDiff:
-                pprint.PrettyPrinter(indent=4).pprint(line);
+                pprint.PrettyPrinter(indent=4).pprint(line)
         else:
             print("\nProblem with %s" % result_path)
             print("use: '--diff' to find out why %s %s are different" % (result_path, expected_path))
@@ -333,8 +333,8 @@ def check_output(
 
 
     if program_args.apply:
-     valid_path = [out_expected_path, err_expected_path, gen_expected_path]
-     program_args.auto_output_path = next(item for item in valid_path if item is not None)
+        valid_path = [out_expected_path, err_expected_path, gen_expected_path]
+        program_args.auto_output_path = next(item for item in valid_path if item is not None)
 
     if out_expected_path and not check_std_output(
             out_expected_path, out_result_path, out_res_txt,
@@ -343,8 +343,8 @@ def check_output(
         ret_flag = False
 
     if program_args.apply:
-     valid_path = [err_expected_path, out_expected_path , gen_expected_path]
-     program_args.auto_output_path = next(item for item in valid_path if item is not None)
+        valid_path = [err_expected_path, out_expected_path, gen_expected_path]
+        program_args.auto_output_path = next(item for item in valid_path if item is not None)
 
     if err_expected_path and not check_std_output(
             err_expected_path, err_result_path, err_res_txt,
