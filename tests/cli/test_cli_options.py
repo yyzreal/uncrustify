@@ -522,9 +522,9 @@ def main(args):
     # find the uncrustify binary (keep Debug dir excluded)
     bin_found = False
     uncr_bin = ''
-    bin_paths = [s_path_join(sc_dir, '../../build_win/uncrustify'),
-                 s_path_join(sc_dir, '../../build_win/Release/uncrustify'),
-                 s_path_join(sc_dir, '../../build_win/Release/uncrustify.exe')]
+    bin_paths = [s_path_join(sc_dir, '../../build/uncrustify'),
+                 s_path_join(sc_dir, '../../build/Release/uncrustify'),
+                 s_path_join(sc_dir, '../../build/Release/uncrustify.exe')]
     for uncr_bin in bin_paths:
         if not isfile(uncr_bin):
             eprint("is not a file: %s" % uncr_bin)
