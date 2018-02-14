@@ -259,7 +259,7 @@ def check_std_output(expected_path, result_path, result_str, result_manip=None, 
     return True
 
 
-def check_output(
+def check_uncrustify_output(
         uncr_bin,
         program_args,
         args_arr=(),
@@ -539,7 +539,7 @@ def main(args):
     #
     # Test help
     #   -h -? --help --usage
-    if not check_output(
+    if not check_uncrustify_output(
             uncr_bin,
             parsed_args,
             out_expected_path=s_path_join(sc_dir, 'Output/help.txt'),
@@ -553,7 +553,7 @@ def main(args):
     #
     # Test --show-config
     #
-    if not check_output(
+    if not check_uncrustify_output(
             uncr_bin,
             parsed_args,
             args_arr=['--show-config'],
@@ -565,7 +565,7 @@ def main(args):
     #
     # Test --update-config
     #
-    if not check_output(
+    if not check_uncrustify_output(
             uncr_bin,
             parsed_args,
             args_arr=['-c', s_path_join(sc_dir, 'Config/mini_d.cfg'),
@@ -578,7 +578,7 @@ def main(args):
             err_result_manip=string_replace('\\', '/')):
         return_flag = False
 
-    if not check_output(
+    if not check_uncrustify_output(
             uncr_bin,
             parsed_args,
             args_arr=['-c', s_path_join(sc_dir, 'Config/mini_nd.cfg'),
@@ -594,7 +594,7 @@ def main(args):
     #
     # Test --update-config-with-doc
     #
-    if not check_output(
+    if not check_uncrustify_output(
             uncr_bin,
             parsed_args,
             args_arr=['-c', s_path_join(sc_dir, 'Config/mini_d.cfg'),
@@ -607,7 +607,7 @@ def main(args):
             err_result_manip=string_replace('\\', '/')):
         return_flag = False
 
-    if not check_output(
+    if not check_uncrustify_output(
             uncr_bin,
             parsed_args,
             args_arr=['-c', s_path_join(sc_dir, 'Config/mini_nd.cfg'),
@@ -623,7 +623,7 @@ def main(args):
     #
     # Test -p
     #
-    if not check_output(
+    if not check_uncrustify_output(
             uncr_bin,
             parsed_args,
             args_arr=['-c', s_path_join(sc_dir, 'Config/mini_nd.cfg'),
@@ -640,7 +640,7 @@ def main(args):
     Ls_A = ['9', '21', '25', '28', '31', '36', '66', '92']
     for L in Ls_A:
         argument_array = ['-c', NULL_DEVICE, '-L', L, '-o', NULL_DEVICE, '-f', s_path_join(sc_dir, 'Input/testSrc.cpp')]
-        if not check_output(
+        if not check_uncrustify_output(
                 uncr_bin,
                 parsed_args,
                 args_arr=argument_array,
@@ -652,7 +652,7 @@ def main(args):
     error_tests = ["I-842", "unmatched_close_pp"]
     for test in error_tests:
         argument_array = ['-q', '-c', s_path_join(sc_dir, 'Config/%s.cfg' % test), '-f', s_path_join(sc_dir, 'Input/%s.cpp' % test),'-o', NULL_DEVICE]
-        if not check_output(
+        if not check_uncrustify_output(
                 uncr_bin,
                 parsed_args,
                 args_arr=argument_array,
