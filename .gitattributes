@@ -3,5 +3,4 @@
 /tests/output/** -text
 
 /tests/cli/output/*.txt -crlf
-/tests/cli/input/*.txt -crlf
-/tests/cli/results/*.txt -crlf
+/tests/cli/input/*.* -crlf
